@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+    
+<mapper namespace="com.fh.shop.backend.mapper.member.IMemberMapper">
+	<!--查询总条数-->
+	<select id="queryTotalCount" resultType="long" parameterType="member">
+		select count(*) from t_member <include refid="memberWhere"></include>
+	</select>
+	<!--分页条件查询-->
+	<select id="list" resultType="member" parameterType="member">
+		select t.* from (
+		select id,userName,phone,email,birthday,areaNames from t_member <include refid="memberWhere"></include>)t limit #{start},#{length}
+	</select>
+	<!--根据会员id查询-->
+	<select id="queryMemberById" resultType="member" parameterType="int">
+		select id,userName,email,birthday,areanames from t_member where id = #{value}
+	</select>
+	<!--根据用户名查询-->
+	<select id="queryMemberByName" resultType="member" parameterType="string">
+		select id,userName,email,birthday,areanames from t_member where userName = #{value}
+	</select>
+	<!--修改会员基本信息-->
+	<update id="updateMember" parameterType="member">
+		update t_member set userName = #{userName},email = #{email},birthday = #{birthday},areaNames = #{areaNames},
+		areaIds = #{areaIds} where id = #{id}
+	</update>
+
+	<sql id="memberWhere">
+		<where>
+			<if test="userName != null and userName != ''">
+				username like concat('%',#{userName},'%')
+			</if>
+			<if test="birthdayBegin != null">
+				and birthday >= #{birthdayBegin}
+			</if>
+			<if test="birthdayEnd != null">
+				and birthday &lt;= #{birthdayEnd}
+			</if>
+			<if test="areaIds != '' and areaIds != null">
+				and areaIds like concat(#{areaIds},'%')
+			</if>
+		</where>
+	</sql>
+
+</mapper>

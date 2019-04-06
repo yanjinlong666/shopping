@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+    
+<mapper namespace="com.fh.shop.backend.mapper.product.IProductMapper">
+	<!-- 新增产品 -->
+	<insert id="addProduct" parameterType="product">
+		<selectKey keyProperty="id" resultType="int" order="AFTER">
+			select last_insert_id()
+		</selectKey>
+		insert into t_product (productName,productPrice,entryTime,updateTime,brandid,productimagepath) values(#{productName},#{productPrice},#{entryTime},#{updateTime},#{brand.id},#{productImagePath})
+	</insert>
+	<!-- 分页条件查询 -->
+	<!--<select id="queryProduct" resultMap="productMap" parameterType="product">
+		select t.* from (select p.id,p.productName,p.productPrice,p.entryTime,p.updateTime,b.brandname,p.productImagePath from t_product p left join t_brand b on p.brandid = b.id
+		<include refid="productWhere"></include> <if test="sortFiled==null or sortFiled==''">order by p.id desc</if><if test="sortFiled!=null and sortFiled!=''">order by ${sortFiled} ${sort}</if>) t limit #{startPos},#{pageSize}
+	</select>-->
+	<!-- 条件查询 导出excel用 -->
+	<select id="queryProductList" resultMap="productMap" parameterType="product">
+		select t.* from (
+		select p.id,p.productName,p.productPrice,p.entryTime,p.updateTime,b.brandname,p.productImagePath from t_product p left join t_brand b on p.brandid = b.id
+		<include refid="productWhere"></include>
+		<if test="sortFiled==null or sortFiled==''">order by p.id desc</if>
+		<if test="sortFiled!=null and sortFiled!=''">order by ${sortFiled} ${sort}</if>)t
+
+	</select>
+	<!-- 条件分页查询 -->
+	<select id="queryProductPageList" resultMap="productMap" >
+		select t.* from (
+		select p.id,p.productName,p.productPrice,p.entryTime,p.updateTime,b.brandname,p.productImagePath from t_product p left join t_brand b on p.brandid = b.id
+		<include refid="productWhere"></include>
+		<if test="sortFiled==id">order by p.id desc</if>
+		<if test="sortFiled!=null and sortFiled!=''">order by ${sortFiled} ${sort}</if>)t
+		limit #{start},#{length}
+	</select>
+
+	<resultMap type="product" id="productMap">
+		<result column="id" property="id"/>
+		<result column="productName" property="productName"/>
+		<result column="productPrice" property="productPrice"/>
+		<result column="entryTime" property="entryTime"/>
+		<result column="updateTime" property="updateTime"/>
+		<result column="brandname" property="brand.brandName"/>
+		<result column="brandid" property="brand.id"/>
+		<!--数据库字段名和实体类属性名一样可以不写-->
+		<result column="productimagepath" property="productImagePath"/>
+	</resultMap>
+	<delete id="deleteProduct" parameterType="int">
+		delete from t_product where id = #{value}
+	</delete>
+	<!-- 批量删除 -->
+	<delete id="deleteBatchProduct" parameterType="list">
+		delete from t_product where id in 
+		<foreach collection="list" item="ids" open="(" close=")" separator=",">
+			#{ids}
+		</foreach>
+	</delete>
+	<!-- 回显 -->
+	<select id="queryProductById" parameterType="int" resultMap="productMap">
+		select p.id,productName,productPrice,brandid,b.brandname,productimagepath from t_product p left join t_brand b on p.brandid = b.id where p.id = #{value}
+		
+	</select>
+	<!-- 修改 -->
+	<update id="updateProduct" parameterType="product">
+		update t_product set productName = #{productName},productPrice = #{productPrice},updateTime = #{updateTime},
+		brandid = #{brand.id},productimagepath = #{productImagePath} where id = #{id}
+	</update>
+	<!-- 根据品牌id查询商品 -->
+	<select id="queryProductByBrandId" parameterType="int" resultMap="productMap">
+		select p.id,p.productName,p.productPrice,p.entryTime,p.updateTime,b.brandname from t_product p
+		left join t_brand b on p.brandid = b.id
+		where brandid = #{value}
+	</select>
+	<!-- 根据品牌ids查询商品 -->
+	<select id="queryProductByBrandIds" parameterType="list" resultType="product">
+		select id,productname from t_product where brandid in 
+		<foreach collection="list" open="(" close=")" separator="," item="ids">
+			#{ids}
+		</foreach>
+	</select>
+	<!--接口查询全部-->
+	<select id="queryProductListApi" resultType="product">
+		select id,productName,productPrice,productimagepath from t_product
+	</select>
+
+
+	<!-- 拼接条件 -->
+	<sql id="productWhere">
+		<where>
+			<if test="productName!=null and productName !=''">
+				productName like concat('%',#{productName},'%')
+			</if>
+			<if test="productPriceMin!=null and productPriceMin >=0 ">
+				and productPrice >= #{productPriceMin}
+			</if>
+			<if test="productPriceMax!=null and productPriceMax >=0 ">
+				and productPrice &lt;= #{productPriceMax}
+			</if>
+			<if test="entryTimeBegin!=null">
+				and p.entryTime > #{entryTimeBegin}
+			</if>
+			<if test="entryTimeEnd!=null">
+				and p.entryTime &lt;= #{entryTimeEnd}
+			</if>
+			<if test="updateTimeBegin!=null">
+				and p.updateTime > #{updateTimeBegin}
+			</if>
+			<if test="updateTimeEnd!=null">
+				and p.updateTime &lt;= #{updateTimeEnd}
+			</if>
+			<if test="brand.id != -1 and brand.id != null ">
+				and brandid = #{brand.id}
+			</if>
+		</where>
+	</sql>
+	<!-- 升降序 --> 
+	<!-- <sql id="productOrder">
+		<if test="orderStr=='priceAsc'">
+			order by p.productPrice
+		</if>
+		<if test="orderStr=='priceDesc'">
+			order by p.productPrice desc
+		</if>
+		<if test="orderStr=='entryTimeAsc'">
+			order by p.entryTime
+		</if>
+		<if test="orderStr=='entryTimeDesc'">
+			order by p.entryTime desc
+		</if>
+		<if test="orderStr=='updateTimeAsc'">
+			order by p.updateTime
+		</if>
+		<if test="orderStr=='updateTimeDesc'">
+			order by p.updateTime desc
+		</if>
+	</sql> -->
+	<!-- 查询总条数 -->
+	<select id="queryTotalCount" parameterType="product" resultType="long">
+		select count(*) from t_product p left join t_brand b on p.brandid = b.id
+		<include refid="productWhere"></include> 
+	</select>
+</mapper>

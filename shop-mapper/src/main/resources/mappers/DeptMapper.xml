@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+    
+<mapper namespace="com.fh.shop.backend.mapper.dept.IDeptMapper">
+	<!--查询部门tree-->
+	<select id="queryDeptList" resultType="dept">
+		select id,deptName,pid,remark from t_dept
+	</select>
+	<!--添加-->
+	<insert id="addDept" parameterType="dept">
+		<selectKey resultType="int" keyProperty="id" order="AFTER">
+			select last_insert_id();
+		</selectKey>
+		insert into t_dept (deptName,pid,remark) values (#{deptName},#{pid},#{remark})
+	</insert>
+	<!--根据id批量删除-->
+	<delete id="delDeptByIds" parameterType="list">
+		delete from t_dept where id in
+		<foreach collection="list" item="ids" open="(" close=")" separator=",">
+			#{ids}
+		</foreach>
+	</delete>
+	<!--修改-->
+	<delete id="updateDept" parameterType="dept">
+		update t_dept set deptName = #{deptName},remark = #{remark} where id = #{id}
+	</delete>
+	<!--根据id查询回显-->
+	<select id="queryDeptById" resultType="dept" parameterType="int">
+		select id,deptName,remark from t_dept where id = #{id}
+	</select>
+	<!--根据pid批量查询-->
+	<select id="queryDeptByPids" parameterType="list" resultType="dept">
+		select id,deptName,remark from t_dept where pid in
+		<foreach collection="list" separator="," open="(" close=")" item="pid">
+			#{pid}
+		</foreach>
+	</select>
+	<!--根据pid批量查询-->
+	<select id="queryDeptByPid" parameterType="int" resultType="dept">
+		select id,deptName,remark from t_dept where pid = #{id}
+	</select>
+
+</mapper>

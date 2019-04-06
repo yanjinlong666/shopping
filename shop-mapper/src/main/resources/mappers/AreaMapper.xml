@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+    
+<mapper namespace="com.fh.shop.backend.mapper.area.IAreaMapper">
+	<!--地区树-->
+	<select id="queryAreaList" resultType="area">
+		select id,pid,areaname from t_area
+	</select>
+	<!--添加地区树-->
+	<insert id="addArea" parameterType="area">
+		<selectKey resultType="int" order="AFTER" keyProperty="id">
+			select last_insert_id();
+		</selectKey>
+		insert into t_area (pid,areaname) values (#{pid},#{areaName})
+	</insert>
+	<!--删除地区-->
+	<delete id="delArea">
+		delete from t_area where id in
+		<foreach collection="list" item="ids" separator="," close=")" open="(">
+			#{ids}
+		</foreach>
+	</delete>
+	<!--根据id查询-->
+	<select id="queryAreaById" resultType="area" parameterType="int">
+		select id,areaName from t_area where id = #{id}
+	</select>
+	<!--修改地区-->
+	<update id="updateArea" parameterType="area">
+		update t_area set areaName = #{areaName} where id = #{id}
+	</update>
+	<!--根据pid查询-->
+	<select id="queryAreaByPid" parameterType="int" resultType="area">
+		select id,areaname from t_area where pid = #{int}
+	</select>
+
+</mapper>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+    
+<mapper namespace="com.fh.shop.backend.mapper.user.IUserMapper">
+	<!-- 验证密码 -->
+	<select id="queryUserPwd" parameterType="string" resultType="user">
+		select id,username,userpwd,salt,loginTime,loginCount,errorLastLoginTime,errorLoginCount,status
+		from t_user where username = #{value}
+	</select>
+	<!--注册用户-->
+	<insert id="addUser" parameterType="user">
+		insert into t_user (userName,userpwd,salt) values (#{userName},#{userPwd},#{salt}
+	</insert>
+	<!--添加用户-->
+	<insert id="addUserInfo" parameterType="user">
+		insert into t_user (userName,userpwd,salt,realName,birthday,sex,salary,deptid,headerImage)
+		values (#{userName},#{userPwd},#{salt},#{realName},#{birthday},#{sex},#{salary},#{dept.id},#{headerImage})
+	</insert>
+
+	<!--更新最后一次登陆时间-->
+	<update id="updateLastLoginTime" parameterType="user">
+		update t_user set loginTime = #{loginTime} where id = #{id}
+	</update>
+	<!--重置登陆次数为1-->
+	<update id="resetLoginCount" parameterType="user">
+		update t_user set loginCount = #{loginCount} where id = #{id}
+	</update>
+	<!--更新最后一次错误登陆时间-->
+	<update id="updateUserErrorLoginTime" parameterType="user">
+		update t_user set errorLastLoginTime = #{errorLastLoginTime} where id = #{id}
+	</update>
+	<!--修改用户状态锁定-->
+	<update id="updateUserStatus" parameterType="int">
+		update t_user set status = 0 where id = #{id}
+	</update>
+	<!--重置错误登陆次数为1-->
+	<update id="resetUserErrorLoginCount" parameterType="int">
+		update t_user set errorLoginCount = 1 where id = #{id}
+	</update>
+	<!--修改错误次数加1-->
+	<update id="increaseUserErrorLoginCount" parameterType="int">
+		update t_user set errorLoginCount = errorLoginCount+1 where id = #{id}
+	</update>
+	<!--重置错误登陆次数为0-->
+	<update id="cleanUserErrorLoginCount" parameterType="int">
+		update t_user set errorLoginCount = 0 where id = #{id}
+	</update>
+	<!--解除账户锁定-->
+	<update id="unLockUser" parameterType="int">
+		update t_user set status = 1,errorLoginCount = 0 where id = #{id}
+	</update>
+	<!--分页条件查询-->
+	<select id="queryUser" resultMap="userMap" parameterType="user">
+		select u.id,u.userName,u.status,u.sex,u.realName,u.salary,u.birthday,u.headerImage,d.deptName from t_user u
+		left join t_dept d on u.deptId = d.id
+		<include refid="userWhere"></include> order by u.id desc limit #{startPos},#{pageSize}
+	</select>
+	<!--查询总条数-->
+	<select id="queryTotalCount" parameterType="user" resultType="long">
+		select count(*) from t_user <include refid="userWhere"></include>
+	</select>
+	<!--删除-->
+	<delete id="deleteUser" parameterType="int">
+		delete from t_user where id = #{id}
+	</delete>
+	<!--根据用户id批量删除-->
+	<delete id="deleteBatchUser" parameterType="list">
+		delete from t_user where id in
+		<foreach collection="list" item="ids" separator="," open="(" close=")">
+			#{ids}
+		</foreach>
+	</delete>
+	<!--根据用户的部门id批量删除-->
+	<delete id="deleteBatchUserByDeptId">
+		delete from t_user where deptId in
+		<foreach collection="list" item="ids" separator="," open="(" close=")">
+			#{ids}
+		</foreach>
+	</delete>
+	<!--回显-->
+	<select id="queryUserById" parameterType="int" resultMap="userMap">
+		select u.id,userName,status,realname,birthday,sex,salary,deptid,headerImage,d.deptname from t_user u
+		left join t_dept d on u.deptid = d.id where u.id = #{id}
+	</select>
+	<!--修改-->
+	<update id="updateUserInfo" parameterType="user">
+		update t_user set userName = #{userName},realName = #{realName},birthday = #{birthday},
+		headerImage = #{headerImage},sex = #{sex},salary = #{salary},deptid = #{dept.id} where id = #{id}
+	</update>
+	<!--批量修改用户所在部门-->
+	<update id="updateBatchUserDept" parameterType="user">
+		update t_user set deptid = #{dept.id} where id in
+		<foreach collection="idsList" separator="," close=")" open="(" item="userId">
+			#{userId}
+		</foreach>
+	</update>
+	<!--根据部门ids查询-->
+	<select id="queryUserByDeptIds" resultMap="userMap" parameterType="list">
+		select u.id,u.userName,u.status,u.sex,u.realName,u.salary,u.birthday,d.deptName from t_user u
+		left join t_dept d on u.deptId = d.id where deptid in
+		<foreach collection="list" open="(" close=")" separator="," item="deptId">
+			#{deptId}
+		</foreach>
+	</select>
+	<!--根据用户ids查询-->
+	<select id="queryUserByIds" parameterType="list" resultType="user">
+		select headerImage from t_user where id in
+		<foreach collection="list" close=")" open="(" separator="," item="ids">
+			#{ids}
+		</foreach>
+	</select>
+
+	<sql id="userWhere">
+		<where>
+			<if test="userName != null and userName != ''">
+				userName like concat('%',#{userName},'%')
+			</if>
+			<if test="status != null">
+				and status = #{status}
+			</if>
+			<if test="salaryMin != null">
+				and salary >= #{salaryMin}
+			</if>
+			<if test="salaryMax != null">
+				and salary &lt;= #{salaryMax}
+			</if>
+			<if test="birthdayMin != null">
+				and birthday >= #{birthdayMin}
+			</if>
+			<if test="birthdayMax != null">
+				and birthday &lt;= #{birthdayMax}
+			</if>
+			<if test="idsList != null">
+				and deptid in
+				<foreach collection="idsList" item="id" open="(" close=")" separator=",">
+					#{id}
+				</foreach>
+			</if>
+		</where>
+	</sql>
+	<resultMap id="userMap" type="user">
+		<result property="dept.deptName" column="deptName"></result>
+		<result property="dept.id" column="deptid"></result>
+	</resultMap>
+</mapper>

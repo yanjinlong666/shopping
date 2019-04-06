@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+    
+<mapper namespace="com.fh.shop.backend.mapper.log.ILogMapper">
+	<!-- 查询总条数 -->
+	<select id="queryTotalCount" parameterType="log" resultType="long">
+		select count(*) from t_log
+		<include refid="logWhere"></include>
+	</select>
+	<!-- 分页条件查询每页数据 -->
+	<select id="queryLog" parameterType="log" resultType="log">
+		select t.* from
+		(select id,userName,info,status,createTime,executeTime,content from t_log <include refid="logWhere"></include>
+		order by id desc)t
+		limit #{startPos},#{pageSize}
+	</select>
+	<!-- 添加 -->
+	<insert id="addLog" parameterType="log">
+        insert into t_log (username,info,status,createtime,executetime,content) values (#{userName},#{info},#{status},#{createTime},#{executeTime},#{content})
+    </insert>
+
+	<sql id="logWhere">
+		<where>
+			<if test="userName !=null and userName != ''">
+				username like concat('%',#{userName},'%')
+			</if>
+			<if test="status != null">
+				and status = #{status}
+			</if>
+			<if test="createTimeMin != null">
+				and createTime >= #{createTimeMin}
+			</if>
+			<if test="createTimeMax != null">
+				and createTime &lt;= #{createTimeMax}
+			</if>
+			<if test="executeTimeMin != null">
+				and executeTime >= #{executeTimeMin}
+			</if>
+			<if test="executeTimeMax != null">
+				and executeTime &lt;= #{executeTimeMax}
+			</if>
+		</where>
+	</sql>
+</mapper>
